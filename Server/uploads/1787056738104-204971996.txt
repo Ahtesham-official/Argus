@@ -1,0 +1,6 @@
+Hospital Bill / Medical Summary
+Patient Name: Ramesh Kumar
+Admission Date: 05/01/2026
+Discharge Date: 07/01/2026
+Diagnosis: Acute Appendicitis (K35)
+Total Amount: Rs. 54500
