@@ -43,6 +43,8 @@ function runTesseract(filePath) {
  *   tesseract install, and for callers that already have extracted text,
  *   e.g. from an upstream NHCX/FHIR document payload).
  */
+const groqService = require('../ai/groqService');
+
 async function extractText(filePath, mimeType) {
   const isPlainText = mimeType === 'text/plain' || filePath.endsWith('.txt');
   if (isPlainText) {
@@ -50,13 +52,23 @@ async function extractText(filePath, mimeType) {
     return { text, engine: 'passthrough-text', confidence: 1.0 };
   }
 
+  // 1. Try Groq Vision OCR first if available
+  if (groqService.isGroqAvailable()) {
+    try {
+      logger.info('Performing OCR using Groq Vision AI engine...', { filePath });
+      const groqResult = await groqService.performGroqOCR(filePath, mimeType);
+      return groqResult;
+    } catch (err) {
+      logger.warn('Groq OCR failed, falling back to local OCR engine', { error: err.message });
+    }
+  }
+
+  // 2. Fallback to local Tesseract OCR
   const available = await checkTesseractAvailable();
   if (!available) {
     const err = new Error(
-      'OCR engine unavailable: the system "tesseract" binary was not found. ' +
-        'Install it (e.g. `apt-get install tesseract-ocr`) or configure a cloud OCR ' +
-        'provider (Textract/Vision/Form Recognizer) in ocrService.js, or submit a ' +
-        '.txt file with pre-extracted text for local testing.'
+      'OCR engine unavailable: neither Groq API key nor local system "tesseract" binary was found. ' +
+        'Configure GROQ_API_KEY in .env or install tesseract-ocr.'
     );
     err.code = 'OCR_ENGINE_UNAVAILABLE';
     throw err;

@@ -24,4 +24,12 @@ module.exports = {
     autoApproveMax: 20,
     investigateMin: 70,
   },
+  ai: {
+    qwenApiKey: process.env.QWEN_API_KEY || '',
+    qwenModel: process.env.QWEN_MODEL || 'qwen-max',
+    qwenBaseUrl: process.env.QWEN_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    groqApiKey: process.env.GROQ_API_KEY || '',
+    groqModel: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+    groqVisionModel: process.env.GROQ_VISION_MODEL || 'llama-3.2-11b-vision-preview',
+  },
 };

@@ -24,7 +24,10 @@ function parseAmount(raw) {
   return Number.isFinite(value) ? value : null;
 }
 
-function extractFields(text = '') {
+const groqService = require('../ai/groqService');
+const logger = require('../../utils/logger');
+
+function extractFieldsRegex(text = '') {
   const fields = {};
   for (const [field, pattern] of Object.entries(FIELD_PATTERNS)) {
     const match = text.match(pattern);
@@ -41,7 +44,24 @@ function extractFields(text = '') {
     completeness,
     foundFieldCount,
     expectedFieldCount,
+    engine: 'regex-heuristic',
   };
 }
 
-module.exports = { extractFields, FIELD_PATTERNS };
+async function extractFieldsAsync(text = '') {
+  if (groqService.isGroqAvailable()) {
+    try {
+      logger.info('Performing NLP Field Extraction via Groq AI Engine...');
+      return await groqService.performGroqNLPExtraction(text);
+    } catch (err) {
+      logger.warn('Groq NLP field extraction failed, falling back to regex rules', { error: err.message });
+    }
+  }
+  return extractFieldsRegex(text);
+}
+
+function extractFields(text = '') {
+  return extractFieldsRegex(text);
+}
+
+module.exports = { extractFields, extractFieldsAsync, extractFieldsRegex, FIELD_PATTERNS };

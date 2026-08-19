@@ -9,7 +9,7 @@ async function processDocument(req, res) {
   }
   const ocr = await ocrService.extractText(req.file.path, req.file.mimetype);
   const classification = classificationService.classifyDocument(ocr.text);
-  const extraction = extractionService.extractFields(ocr.text);
+  const extraction = await extractionService.extractFieldsAsync(ocr.text);
 
   res.json({
     file: { originalName: req.file.originalname, sizeBytes: req.file.size },
@@ -27,10 +27,11 @@ function classifyText(req, res) {
 }
 
 /** POST /api/document-ai/extract - extract structured fields from raw text. */
-function extractText(req, res) {
+async function extractText(req, res) {
   const { text } = req.body;
   if (!text) return res.status(400).json({ error: { message: '"text" is required', code: 'VALIDATION_ERROR' } });
-  res.json(extractionService.extractFields(text));
+  const result = await extractionService.extractFieldsAsync(text);
+  res.json(result);
 }
 
 module.exports = { processDocument, classifyText, extractText };

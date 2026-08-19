@@ -28,16 +28,24 @@ const { buildExplanation } = require('../services/explainability/explainabilityE
  * OCR/classify/extract before validation. If omitted, the pipeline runs on
  * the structured `claim` payload alone.
  */
+const qwenBrain = require('../services/ai/qwenBrain');
+
 async function analyzeClaim(claim, documentFile) {
   const claimId = claim.claimId || `CLM-NEW-${uuid().slice(0, 8)}`;
   const enrichedClaim = { ...claim, claimId };
+
+  // --- 0. Qwen Brain Orchestration Plan ---------------------------------
+  const aiPlan = await qwenBrain.orchestratePipelinePlan({
+    claim: enrichedClaim,
+    hasDocument: Boolean(documentFile),
+  });
 
   // --- 1. Document AI (optional) ---------------------------------------
   let documentAIResult = null;
   if (documentFile) {
     const ocr = await ocrService.extractText(documentFile.path, documentFile.mimeType);
     const classification = classificationService.classifyDocument(ocr.text);
-    const extraction = extractionService.extractFields(ocr.text);
+    const extraction = await extractionService.extractFieldsAsync(ocr.text);
     documentAIResult = {
       ocrEngine: ocr.engine,
       ocrConfidence: ocr.confidence,
@@ -76,7 +84,7 @@ async function analyzeClaim(claim, documentFile) {
   const providerRiskResult = await computeProviderRiskScore(enrichedClaim.providerId);
   const confidenceResult = computeConfidenceScore({ documentConfidence, anomalyResult });
 
-  // --- 5. Explainability AI ----------------------------------------------
+  // --- 5. Explainability & Qwen Executive Brain Decision -----------------
   const explanation = buildExplanation({
     claim: enrichedClaim,
     validationResult,
@@ -89,6 +97,13 @@ async function analyzeClaim(claim, documentFile) {
     riskResult,
   });
 
+  const qwenExecutiveDecision = await qwenBrain.generateExecutiveDecision({
+    claim: enrichedClaim,
+    documentAI: documentAIResult,
+    riskResult,
+    fraudResult: { anomaly: anomalyResult, duplicate: duplicateResult, pattern: patternResult, network: networkResult },
+  });
+
   // Persist + feed back into the provider's flagged count for future scoring.
   await store.saveSubmittedClaim(enrichedClaim);
   if (riskResult.band === 'HIGH' || riskResult.band === 'CRITICAL') {
@@ -98,11 +113,13 @@ async function analyzeClaim(claim, documentFile) {
   return {
     claimId,
     claim: enrichedClaim,
+    aiOrchestrationPlan: aiPlan,
     documentAI: documentAIResult,
     validation: { ...validationResult, consistency: consistencyResult, eligibility: eligibilityResult },
     fraud: { anomaly: anomalyResult, duplicate: duplicateResult, pattern: patternResult, network: networkResult },
     risk: { claim: riskResult, provider: providerRiskResult, confidence: confidenceResult },
     explainability: explanation,
+    qwenExecutiveDecision,
   };
 }
 
