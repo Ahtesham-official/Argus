@@ -1,0 +1,156 @@
+.provider-intel-page {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.provider-intel-header {
+  padding: 32px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 245, 238, 0.92) 100%);
+  border: 1px solid rgba(0, 121, 121, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(0, 121, 121, 0.05);
+}
+
+.provider-intel-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #007979;
+  margin-bottom: 12px;
+}
+
+.provider-intel-title {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #007979;
+}
+
+.provider-intel-title span {
+  color: #181c1a;
+}
+
+.provider-intel-description {
+  margin: 12px 0 0;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  color: #59615e;
+  max-width: 600px;
+}
+
+.provider-intel-main-card {
+  background: #ffffff;
+  border: 1px solid #ffdec9;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(0, 121, 121, 0.04);
+  overflow: hidden;
+}
+
+.provider-intel-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.provider-intel-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.provider-intel-table th {
+  padding: 16px 24px;
+  background: rgba(255, 248, 243, 0.9);
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #007979;
+  border-bottom: 1px solid #ffdec9;
+  white-space: nowrap;
+}
+
+.provider-intel-table td {
+  padding: 18px 24px;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #181c1a;
+  border-bottom: 1px solid rgba(255, 222, 201, 0.5);
+  white-space: nowrap;
+}
+
+.provider-intel-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.provider-intel-table tbody tr:hover {
+  background: rgba(255, 250, 247, 0.6);
+}
+
+.provider-intel-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.provider-intel-registry-cell {
+  font-weight: 600;
+  color: #007979;
+}
+
+.provider-intel-name-cell {
+  font-weight: 600;
+  font-family: Inter, sans-serif;
+}
+
+.provider-intel-anomaly-cell {
+  color: #59615e;
+}
+
+.provider-intel-risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.provider-intel-risk-badge.watch {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.provider-intel-risk-badge.high {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+@media (max-width: 768px) {
+  .provider-intel-page {
+    padding: 16px;
+  }
+  .provider-intel-header {
+    padding: 24px;
+  }
+  .provider-intel-title {
+    font-size: 26px;
+    line-height: 32px;
+  }
+}

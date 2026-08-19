@@ -1,0 +1,131 @@
+.model-feedback-page {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.model-feedback-header {
+  padding: 32px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 245, 238, 0.92) 100%);
+  border: 1px solid rgba(0, 121, 121, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(0, 121, 121, 0.05);
+}
+
+.model-feedback-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #007979;
+  margin-bottom: 12px;
+}
+
+.model-feedback-title {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #007979;
+}
+
+.model-feedback-title span {
+  color: #181c1a;
+}
+
+.model-feedback-description {
+  margin: 12px 0 0;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  color: #59615e;
+  max-width: 600px;
+}
+
+.model-feedback-main-card {
+  background: #ffffff;
+  border: 1px solid #ffdec9;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(0, 121, 121, 0.04);
+  padding: 32px;
+}
+
+.model-feedback-section-title {
+  margin: 0 0 24px;
+  font-family: Inter, sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: #007979;
+}
+
+.model-feedback-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.model-feedback-log-item {
+  padding: 20px 24px;
+  background: rgba(255, 248, 243, 0.3);
+  border: 1px solid #ffdec9;
+  border-left: 4px solid #007979;
+  border-radius: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.model-feedback-log-item:hover {
+  background: rgba(255, 248, 243, 0.7);
+}
+
+.model-feedback-log-item.warning {
+  border-left-color: #f59e0b;
+  background: rgba(254, 252, 232, 0.5);
+  border-color: #fef08a;
+}
+
+.model-feedback-log-item.warning:hover {
+  background: rgba(254, 252, 232, 1);
+}
+
+.model-feedback-log-title {
+  margin: 0 0 6px;
+  font-family: Inter, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #181c1a;
+}
+
+.model-feedback-log-desc {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  line-height: 20px;
+  color: #717974;
+}
+
+@media (max-width: 768px) {
+  .model-feedback-page {
+    padding: 16px;
+  }
+  .model-feedback-header {
+    padding: 24px;
+  }
+  .model-feedback-title {
+    font-size: 26px;
+    line-height: 32px;
+  }
+  .model-feedback-main-card {
+    padding: 24px;
+  }
+}
