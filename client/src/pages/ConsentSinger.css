@@ -1,0 +1,63 @@
+:root {
+      --green: #007979;
+      --card-bg: #FFF8F3;
+      --card-border: #FFDEC9;
+    }
+
+    html,
+    body,
+    #sidebar,
+    .no-scrollbar,
+    div,
+    main {
+      -ms-overflow-style: none !important;
+      scrollbar-width: none !important;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    #sidebar::-webkit-scrollbar,
+    .no-scrollbar::-webkit-scrollbar,
+    div::-webkit-scrollbar,
+    main::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+
+    .command-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 245, 238, 0.92) 100%);
+      border: 1px solid rgba(255, 210, 170, 0.9);
+      border-radius: 0.75rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+      transition: all 0.2s ease-in-out;
+    }
+
+    .command-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 121, 121, 0.06);
+    }
+
+    .inner-white-box {
+      background-color: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: 0.5rem;
+    }
+
+    .pulse-radar {
+      box-shadow: 0 0 0 0 rgba(0, 121, 121, 0.4);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(0, 121, 121, 0.4);
+      }
+
+      70% {
+        box-shadow: 0 0 0 8px rgba(0, 121, 121, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(0, 121, 121, 0);
+      }
+    }

@@ -1,0 +1,54 @@
+:root {
+      --green: #007979;
+      --green2: #ffd2aa;
+    }
+
+    #sidebar .overflow-y-auto::-webkit-scrollbar,
+    #sidebar::-webkit-scrollbar,
+    .no-scrollbar::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+
+    #sidebar,
+    .no-scrollbar {
+      -ms-overflow-style: none !important;
+      scrollbar-width: none !important;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1;
+    }
+
+    /* Fixed Glassmorphism effect - Resting state is flat to match Submitted cards */
+    .glass-layer {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 248, 242, 0.95) 100%);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid #ffd2aa;
+      transform: translateY(0) scale(1);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .glass-layer:hover {
+      transform: translateY(-2px);
+      border-color: #007979;
+      box-shadow: 0 4px 12px rgba(0, 121, 121, 0.15);
+    }
+
+    /* Drag and drop styling */
+    .kanban-card.is-dragging {
+      opacity: 0.5;
+      transform: scale(0.98);
+    }
+
+    .kanban-column.drag-over {
+      background-color: rgba(255, 210, 170, 0.3);
+      border-color: #007979;
+    }
