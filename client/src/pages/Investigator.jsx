@@ -1,19 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../api/client';
 import './Investigator.css';
-
-const initialClaims = [
-  { id: 'CLM-98231', risk: 'low', patient: 'Sofiya Gowda', hospital: 'Lilavati Hospital, BKC Mumbai', amount: '₹ 1,24,000.00', score: 12, column: 'submitted' },
-  { id: 'CLM-98235', risk: 'medium', patient: 'Adityapratap Singh', hospital: 'Ruby Hall Clinic, Pune', amount: '₹ 4,50,000.00', score: 45, column: 'submitted' },
-  { id: 'CLM-98201', risk: 'low', patient: 'Rajdeep Yadav', hospital: 'Fortis Hospital, Vashi Navi Mumbai', amount: '₹ 85,000.00', score: 0, column: 'processing', status: 'Checking Billing...', progress: 65 },
-  { id: 'CLM-98112', risk: 'critical', patient: 'Ahtesham Shaikh', hospital: 'Sahyadri Hospital, Pune', amount: '₹ 12,80,000.00', score: 89, column: 'flagged', anomaly: 'Duplicate procedure...' },
-  { id: 'CLM-98005', risk: 'medium', patient: 'Ayush Chaudhary', hospital: 'Jupiter Hospital, Thane', amount: '₹ 3,20,000.00', score: 62, column: 'investigation' },
-  { id: 'CLM-97992', risk: 'approved', patient: 'Rohan Patil', hospital: 'Apollo Clinic', amount: '₹ 15,000.00', score: 0, column: 'approved' },
-];
 
 const Investigator = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState(null);
-  const [claims, setClaims] = useState(initialClaims);
+  const [claims, setClaims] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchClaims = async () => {
+      try {
+        const data = await api.get('/claims');
+        const mapped = data.claims.map(c => {
+          // Map riskBand to a risk level for styling
+          let risk = 'low';
+          if (c.riskBand === 'MEDIUM') risk = 'medium';
+          if (c.riskBand === 'HIGH') risk = 'critical';
+          if (c.riskBand === 'CRITICAL') risk = 'critical';
+
+          // Use kanbanColumn from the AI decision (authoritative)
+          const column = c.kanbanColumn || 'submitted';
+
+          return {
+            id: c.claimId,
+            risk,
+            patient: c.patientName || c.patientId,
+            hospital: c.providerName || c.providerId,
+            amount: `₹${Number(c.billedAmount).toLocaleString()}`,
+            score: c.riskScore || 0,
+            column,
+            status: c.status,
+            riskBand: c.riskBand,
+            anomaly: c.anomalyDescription || null,
+            aiRecommendation: c.aiRecommendation || null,
+            diagnosisDescription: c.diagnosisDescription || c.diagnosisCode || '—',
+            doctor: c.doctorName || '—',
+            category: c.category,
+          };
+        });
+        setClaims(mapped);
+      } catch (err) {
+        console.error("Failed to fetch claims:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchClaims();
+  }, []);
 
   const handleDragStart = (e, claimId) => {
     e.dataTransfer.setData('claimId', claimId);
@@ -23,11 +57,17 @@ const Investigator = () => {
     e.preventDefault();
   };
 
-  const handleDrop = (e, columnId) => {
+  const handleDrop = async (e, columnId) => {
     e.preventDefault();
     const claimId = e.dataTransfer.getData('claimId');
     if (claimId) {
-      setClaims(claims.map(claim => claim.id === claimId ? { ...claim, column: columnId } : claim));
+      try {
+        await api.patch(`/claims/${claimId}/status`, { kanbanColumn: columnId });
+        setClaims(claims.map(claim => claim.id === claimId ? { ...claim, column: columnId } : claim));
+      } catch (err) {
+        console.error("Failed to update claim column:", err);
+        alert("Failed to move claim in backend.");
+      }
     }
   };
 
@@ -40,17 +80,29 @@ const Investigator = () => {
     setSelectedClaim(null);
   };
 
-  const updateClaimAction = (action) => {
+  const updateClaimAction = async (action) => {
     if (!selectedClaim) return;
-    setClaims(claims.map(claim => {
-      if (claim.id === selectedClaim.id) {
-        if (action === 'investigation') return { ...claim, column: 'investigation' };
-        if (action === 'genuine') return { ...claim, column: 'approved', risk: 'low' };
-        if (action === 'fraud') return { ...claim, column: 'flagged', risk: 'critical', anomaly: 'Confirmed Fraud: ' + (claim.anomaly || 'Manual Review') };
-      }
-      return claim;
-    }));
-    closeSidebar();
+    try {
+      let newStatus = '';
+      if (action === 'investigation') newStatus = 'UNDER_INVESTIGATION';
+      if (action === 'genuine') newStatus = 'APPROVED';
+      if (action === 'fraud') newStatus = 'REJECTED'; // Or 'FLAGGED'
+
+      await api.patch(`/claims/${selectedClaim.id}/status`, { status: newStatus });
+
+      setClaims(claims.map(claim => {
+        if (claim.id === selectedClaim.id) {
+          if (action === 'investigation') return { ...claim, column: 'investigation', status: 'UNDER_INVESTIGATION' };
+          if (action === 'genuine') return { ...claim, column: 'approved', risk: 'low', status: 'APPROVED' };
+          if (action === 'fraud') return { ...claim, column: 'flagged', risk: 'critical', anomaly: 'Confirmed Fraud: ' + (claim.anomaly || 'Manual Review'), status: 'REJECTED' };
+        }
+        return claim;
+      }));
+      closeSidebar();
+    } catch (err) {
+      console.error("Failed to update claim status:", err);
+      alert("Failed to update claim status");
+    }
   };
 
   const getRiskStyle = (risk) => {
@@ -82,15 +134,18 @@ const Investigator = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
         <div>
           <h2 className="font-headline-lg text-2xl font-bold text-[#007979] tracking-tight">Investigator Workbench</h2>
-          <p className="font-body-sm text-sm text-[#007979]/70 mt-1">Real-time claim processing and fraud detection.</p>
+          <p className="font-body-sm text-sm text-[#007979]/70 mt-1">
+            Real-time AI-driven claim processing and fraud detection.
+            {loading && <span className="ml-2 text-[#007979] animate-pulse font-bold">Loading claims...</span>}
+          </p>
         </div>
         <div className="flex gap-2">
           <button className="px-4 py-2 bg-white border border-[#FFDEC9] rounded-md text-[#007979] font-label-md text-sm flex items-center gap-2 hover:-translate-y-0.5 shadow-sm transition-all duration-200">
             <span className="material-symbols-outlined text-[18px]">filter_list</span> Filter
           </button>
-          <button className="px-4 py-2 bg-[#007979] text-white rounded-md font-label-md text-sm flex items-center gap-2 hover:-translate-y-0.5 shadow-sm transition-all duration-200">
+          <a href="/claims" className="px-4 py-2 bg-[#007979] text-white rounded-md font-label-md text-sm flex items-center gap-2 hover:-translate-y-0.5 shadow-sm transition-all duration-200">
             <span className="material-symbols-outlined text-[18px]">add</span> New Claim
-          </button>
+          </a>
         </div>
       </div>
 
@@ -322,7 +377,8 @@ const Investigator = () => {
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-8">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Key Metrics */}
               <div className="flex gap-4">
                 <div className="flex-1 bg-[#FFF8F3]/50 p-4 rounded-xl border border-[#FFDEC9]">
                   <p className="font-label-md text-[#007979]/70 text-[10px] uppercase mb-1 font-bold">Claim Amount</p>
@@ -330,26 +386,72 @@ const Investigator = () => {
                 </div>
                 <div className="flex-1 bg-[#FFF8F3]/50 p-4 rounded-xl border border-[#FFDEC9] flex items-center justify-between">
                   <div>
-                    <p className="font-label-md text-[#007979]/70 text-[10px] uppercase mb-1 font-bold">Argus Score</p>
-                    <p className="font-data-tabular text-[20px] font-semibold text-red-600">{selectedClaim.score}</p>
+                    <p className="font-label-md text-[#007979]/70 text-[10px] uppercase mb-1 font-bold">Argus AI Score</p>
+                    <p className={`font-data-tabular text-[20px] font-semibold ${selectedClaim.score > 70 ? 'text-red-600' : selectedClaim.score > 40 ? 'text-yellow-600' : 'text-[#007979]'}`}>
+                      {selectedClaim.score}
+                    </p>
                   </div>
-                  <div className={`w-12 h-12 rounded-full border-4 ${selectedClaim.score > 80 ? 'border-red-500 text-red-600' : 'border-yellow-500 text-yellow-600'} flex items-center justify-center font-label-md text-[12px] font-bold`}>{selectedClaim.score}</div>
+                  <div className={`w-12 h-12 rounded-full border-4 ${selectedClaim.score > 70 ? 'border-red-500 text-red-600' : selectedClaim.score > 40 ? 'border-yellow-500 text-yellow-600' : 'border-[#007979] text-[#007979]'} flex items-center justify-center font-label-md text-[12px] font-bold`}>
+                    {selectedClaim.score}
+                  </div>
                 </div>
               </div>
+
+              {/* Claim Details */}
               <section>
-                <h3 className="font-headline-sm text-[16px] font-bold text-[#007979] mb-4 flex items-center gap-2">
+                <h3 className="font-headline-sm text-[16px] font-bold text-[#007979] mb-3 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#007979]">info</span> Claim Details
+                </h3>
+                <div className="space-y-2 text-xs">
+                  {selectedClaim.doctor && selectedClaim.doctor !== '—' && (
+                    <div className="flex justify-between py-2 border-b border-[#FFDEC9]/50">
+                      <span className="text-[#007979]/60 font-bold uppercase tracking-wide">Clinician</span>
+                      <span className="text-[#007979] font-semibold">{selectedClaim.doctor}</span>
+                    </div>
+                  )}
+                  {selectedClaim.category && (
+                    <div className="flex justify-between py-2 border-b border-[#FFDEC9]/50">
+                      <span className="text-[#007979]/60 font-bold uppercase tracking-wide">Category</span>
+                      <span className="text-[#007979] font-semibold">{selectedClaim.category}</span>
+                    </div>
+                  )}
+                  {selectedClaim.diagnosisDescription && (
+                    <div className="flex justify-between py-2 border-b border-[#FFDEC9]/50">
+                      <span className="text-[#007979]/60 font-bold uppercase tracking-wide">Diagnosis</span>
+                      <span className="text-[#007979] font-semibold text-right max-w-[60%]">{selectedClaim.diagnosisDescription}</span>
+                    </div>
+                  )}
+                  {selectedClaim.aiRecommendation && (
+                    <div className="flex justify-between py-2">
+                      <span className="text-[#007979]/60 font-bold uppercase tracking-wide">AI Decision</span>
+                      <span className="font-bold text-[#007979]">{selectedClaim.aiRecommendation.replace(/_/g, ' ')}</span>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* Intelligence Brief */}
+              <section>
+                <h3 className="font-headline-sm text-[16px] font-bold text-[#007979] mb-3 flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#007979]">psychology</span> Intelligence Brief
                 </h3>
-                <div className="space-y-3">
+                {selectedClaim.anomaly ? (
                   <div className="border border-red-300 bg-red-50 p-3 rounded-lg relative overflow-hidden">
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
                     <div className="flex justify-between items-start mb-1 pl-2">
-                      <span className="font-label-md text-[12px] font-bold text-red-800">Billing Anomaly Detected</span>
-                      <span className="font-data-tabular text-[12px] text-red-600 font-bold">84% Match</span>
+                      <span className="font-label-md text-[12px] font-bold text-red-800">⚠ Fraud Signals Detected</span>
+                      <span className="font-data-tabular text-[12px] text-red-600 font-bold">Score: {selectedClaim.score}</span>
                     </div>
-                    <p className="font-body-sm text-[12px] text-red-700/80 pl-2">{selectedClaim.anomaly || "Procedure code CPT-99215 submitted for standard follow-up."}</p>
+                    <p className="font-body-sm text-[12px] text-red-700/80 pl-2">{selectedClaim.anomaly}</p>
                   </div>
-                </div>
+                ) : (
+                  <div className="border border-green-200 bg-green-50 p-3 rounded-lg">
+                    <p className="text-[12px] text-green-700 font-bold flex items-center gap-2">
+                      <span className="material-symbols-outlined text-base">check_circle</span>
+                      No fraud signals detected by AI engine.
+                    </p>
+                  </div>
+                )}
               </section>
             </div>
             <div className="p-6 border-t border-[#FFDEC9] bg-white mt-auto grid grid-cols-2 gap-3">

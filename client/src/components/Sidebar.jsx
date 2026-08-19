@@ -93,7 +93,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             icon="upload_file"
             paths={['/claim_entry', '/claims', '/erp_Inventory_Mapper', '/consent_signer', '/fhir_inspector']}
             items={[
-              { to: '/claim_entry', label: 'Claims Entry', icon: 'post_add', paths: ['/claim_entry', '/claims'] },
+              { to: '/claims', label: 'Claims Entry', icon: 'post_add', paths: ['/claim_entry', '/claims'] },
               { to: '/erp_Inventory_Mapper', label: 'ERP Inventory Mapper', icon: 'inventory_2', paths: ['/erp_Inventory_Mapper'] },
               { to: '/consent_signer', label: 'Consent & Digital Signer', icon: 'fingerprint', paths: ['/consent_signer'] },
               { to: '/fhir_inspector', label: 'FHIR Payload Inspector', icon: 'data_object', paths: ['/fhir_inspector'] }
@@ -104,12 +104,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             id="claims-fraud"
             label="Claims & Fraud Management"
             icon="policy"
-            paths={['/claims_inbox', '/kanban_board', '/fraud_analytics', '/investigator', '/insurer_command']}
+            paths={['/claims_inbox', '/fraud_analytics', '/investigator', '/insurer_command']}
             items={[
               { to: '/claims_inbox', label: 'Claims Inbox', icon: 'inbox', paths: ['/claims_inbox'] },
-              { to: '/kanban_board', label: 'Kanban Board', icon: 'view_kanban', paths: ['/kanban_board'] },
+              { to: '/investigator', label: 'Investigator Workbench', icon: 'find_in_page', paths: ['/investigator', '/insurer_command'] },
               { to: '/fraud_analytics', label: 'Fraud Analytics & Rules', icon: 'shield_with_heart', paths: ['/fraud_analytics'] },
-              { to: '/investigator', label: 'Investigator Workbench', icon: 'find_in_page', paths: ['/investigator', '/insurer_command'] }
             ]}
           />
 

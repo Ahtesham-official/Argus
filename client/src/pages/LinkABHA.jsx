@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../api/client';
 import './LinkABHA.css';
 
 const LinkABHA = () => {
@@ -10,22 +11,50 @@ const LinkABHA = () => {
   const [mobileNumber, setMobileNumber] = useState('+91 7400003455');
   const [isVerified, setIsVerified] = useState(false);
   const [linkedPolicies, setLinkedPolicies] = useState(0);
+  
+  const [txnId, setTxnId] = useState(null);
+  const [otpInput, setOtpInput] = useState('123456');
 
-  const verifyAbhaDetails = () => {
+  const verifyAbhaDetails = async () => {
     setIsVerifying(true);
-    setTimeout(() => {
+    try {
+      const res = await api.post('/abha/verify', { abhaNumber: abhaAddress });
+      if (res.skipOtp) {
+        setIsVerified(true);
+        alert(res.message);
+      } else {
+        setTxnId(res.txnId);
+        setShowOtp(true);
+      }
+    } catch (err) {
+      alert(err.message || 'Verification failed');
+    } finally {
       setIsVerifying(false);
-      setShowOtp(true);
-    }, 600);
+    }
   };
 
-  const confirmOtpVerification = () => {
-    setIsVerified(true);
-    alert('KYC & ABDM Token successfully validated for Sofiya Gowda!');
+  const confirmOtpVerification = async () => {
+    try {
+      await api.post('/abha/confirm-otp', { txnId, otp: otpInput });
+      setIsVerified(true);
+      alert('KYC & ABDM Token successfully validated for ' + abhaAddress + '!');
+    } catch (err) {
+      alert(err.message || 'OTP confirmation failed');
+    }
   };
 
-  const linkPolicyNow = () => {
-    setLinkedPolicies(prev => prev + 1);
+  const linkPolicyNow = async () => {
+    try {
+      await api.post('/abha/link-policy', {
+        abhaNumber: abhaAddress,
+        policyNumber: 'Health Secure Plus (#POL-8842)',
+        insurerId: 'INS-001'
+      });
+      setLinkedPolicies(prev => prev + 1);
+      alert('Policy linked successfully!');
+    } catch (err) {
+      alert(err.message || 'Failed to link policy');
+    }
   };
 
   return (
@@ -114,7 +143,10 @@ const LinkABHA = () => {
             {/* ABHA Input Form */}
             {activeTab === 'abha' && (
               <div>
-                <label className="block text-xs font-semibold text-sage-text mb-2">ABHA Address / ABHA Number</label>
+                <label className="block text-xs font-semibold text-sage-text mb-2">
+                  ABHA Address / ABHA Number
+                  <span className="ml-2 text-sage-text/60 font-medium normal-case">(Optional — leave blank to skip)</span>
+                </label>
                 <div className="relative mb-4">
                   <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sage-text text-lg">badge</span>
                   <input 
@@ -165,8 +197,12 @@ const LinkABHA = () => {
                   <span className="text-[11px] text-secondary font-mono font-bold">OTP Sent</span>
                 </div>
                 <div className="flex gap-2 mb-3 justify-between">
-                  {['7', '4', '0', '0', '3', '4'].map((val, idx) => (
-                    <input key={idx} type="text" maxLength="1" defaultValue={val} className="w-10 h-10 text-center font-bold bg-white border border-border-subtle rounded-md focus:border-secondary outline-none text-sm" />
+                  {otpInput.split('').map((val, idx) => (
+                    <input key={idx} type="text" maxLength="1" defaultValue={val} className="w-10 h-10 text-center font-bold bg-white border border-border-subtle rounded-md focus:border-secondary outline-none text-sm" onChange={(e) => {
+                      const newOtp = otpInput.split('');
+                      newOtp[idx] = e.target.value;
+                      setOtpInput(newOtp.join(''));
+                    }} />
                   ))}
                 </div>
                 <button 

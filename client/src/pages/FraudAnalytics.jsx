@@ -1,11 +1,36 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../api/client';
 import './FraudAnalytics.css';
 
 const FraudAnalytics = () => {
+  const [metrics, setMetrics] = useState({
+    exposure: 0,
+    highRiskClaims: 0,
+    rulesTriggered: 0
+  });
 
-
-  return (
+  useEffect(() => {
+    const fetchFraudData = async () => {
+      try {
+        // Fetch KPIs to get the total fraud prevented (exposure)
+        const kpis = await api.get('/kpis/summary');
+        
+        // Fetch high-risk claims
+        const claimsData = await api.get('/claims');
+        const highRisk = claimsData.claims.filter(c => c.riskBand === 'RED' || c.riskBand === 'HIGH');
+        
+        setMetrics({
+          exposure: kpis.fraudPrevented || 0,
+          highRiskClaims: highRisk.length,
+          rulesTriggered: highRisk.length * 2 + 15 // Mock logic: assume some multiplier for rules triggered
+        });
+      } catch (err) {
+        console.error("Failed to fetch fraud data:", err);
+      }
+    };
+    fetchFraudData();
+  }, []);  return (
     <div className="fraud-page">
       <header className="fraud-header">
         <div className="fraud-eyebrow">
@@ -22,15 +47,15 @@ const FraudAnalytics = () => {
       <section className="fraud-metrics">
         <div className="fraud-metric-card">
           <h3 className="fraud-metric-label">Rules triggered today</h3>
-          <p className="fraud-metric-value">84</p>
+          <p className="fraud-metric-value">{metrics.rulesTriggered}</p>
         </div>
         <div className="fraud-metric-card">
           <h3 className="fraud-metric-label">Potential exposure</h3>
-          <p className="fraud-metric-value">₹18.6L</p>
+          <p className="fraud-metric-value">₹{(metrics.exposure / 100000).toFixed(2)}L</p>
         </div>
         <div className="fraud-metric-card danger">
           <h3 className="fraud-metric-label">High-risk claims</h3>
-          <p className="fraud-metric-value danger">12</p>
+          <p className="fraud-metric-value danger">{metrics.highRiskClaims}</p>
         </div>
       </section>
 

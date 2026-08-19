@@ -1,8 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../api/client';
 import './AdminOversight.css';
 
 const AdminOversight = () => {
+  const [kpis, setKpis] = useState({ totalClaims: 0 });
+
+  useEffect(() => {
+    const fetchKpis = async () => {
+      try {
+        const data = await api.get('/kpis/summary');
+        setKpis(data);
+      } catch (err) {
+        console.error("Failed to fetch KPIs:", err);
+      }
+    };
+    fetchKpis();
+  }, []);
   return (
     <div className="admin-page">
       <header className="admin-header">
@@ -21,7 +35,7 @@ const AdminOversight = () => {
         <Link to="/system_kpis" className="admin-card">
           <span className="material-symbols-outlined">dashboard</span>
           <h2>System KPIs</h2>
-          <p>Volume, approvals and fraud prevention.</p>
+          <p>Volume, approvals and fraud prevention. ({kpis.totalClaims ? `${kpis.totalClaims} claims processed` : 'Loading...'})</p>
         </Link>
         <Link to="/provider_intelligence" className="admin-card">
           <span className="material-symbols-outlined">domain</span>

@@ -1,15 +1,5 @@
 import React, { useState } from 'react';
-
-const submitClaim = async (claimData) => {
-  await new Promise((resolve) => setTimeout(resolve, 1200));
-
-  return {
-    success: true,
-    message: 'Claim created successfully.',
-    claimId: `CLM-${Date.now()}`,
-    data: claimData,
-  };
-};
+import api from '../api/client';
 
 const ClaimEntry = () => {
   const [formData, setFormData] = useState({
@@ -42,10 +32,6 @@ const ClaimEntry = () => {
       return 'Please enter the patient name.';
     }
 
-    if (!formData.abhaNumber.trim()) {
-      return 'Please enter the ABHA number.';
-    }
-
     if (!formData.providerId.trim()) {
       return 'Please enter the Provider / HFR ID.';
     }
@@ -61,9 +47,8 @@ const ClaimEntry = () => {
     return null;
   };
 
-  const handleSubmit = async (e) => {
+  const handleStepOne = (e) => {
     e.preventDefault();
-
     setError('');
     setSuccess('');
 
@@ -74,27 +59,31 @@ const ClaimEntry = () => {
       return;
     }
 
+    setCurrentStep(2);
+  };
+
+  const handleFinalSubmit = async () => {
+    setError('');
+    setSuccess('');
     setIsSubmitting(true);
 
     const claimData = {
       patientName: formData.patientName.trim(),
-      abhaNumber: formData.abhaNumber.trim(),
+      abhaNumber: formData.abhaNumber.trim() || undefined,
       providerId: formData.providerId.trim(),
       estimatedAmount: Number(formData.estimatedAmount),
     };
 
     try {
-      const response = await submitClaim(claimData);
+      const response = await api.post('/claims', claimData);
 
-      if (!response.success) {
-        throw new Error(
-          response.message || 'Unable to create claim.'
-        );
+      if (!response.claimId) {
+        throw new Error('Unable to create claim.');
       }
 
       setClaim(response);
-      setSuccess(response.message);
-      setCurrentStep(2);
+      setSuccess('Claim submitted successfully. It is now in the processing queue.');
+      // Keep on step 3 but disable further submission, or show a completion view
     } catch (err) {
       setError(
         err.message || 'Something went wrong. Please try again.'
@@ -276,12 +265,16 @@ const ClaimEntry = () => {
 
             <button
               type="button"
-              onClick={() => {
-                setSuccess('Claim is ready for final submission.');
-              }}
-              className="h-11 px-5 rounded-lg bg-[#007979] text-white text-sm font-bold hover:bg-[#005c5c] transition-colors"
+              onClick={handleFinalSubmit}
+              disabled={isSubmitting}
+              className="h-11 px-5 rounded-lg bg-[#007979] text-white text-sm font-bold hover:bg-[#005c5c] transition-colors disabled:bg-[#7aabab] flex items-center"
             >
-              Submit Claim
+              {isSubmitting ? (
+                <>
+                  <span className="w-4 h-4 mr-2 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  Submitting...
+                </>
+              ) : 'Submit Claim'}
             </button>
 
           </div>
@@ -369,7 +362,7 @@ const ClaimEntry = () => {
           </div>
 
           {currentStep === 1 && (
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleStepOne}>
 
               <div className="px-6 md:px-8 py-6">
 
@@ -409,7 +402,7 @@ const ClaimEntry = () => {
                       htmlFor="abhaNumber"
                       className="block mb-1.5 text-xs font-bold text-[#007979]"
                     >
-                      ABHA number
+                      ABHA number <span className="text-[#007979]/60 font-medium normal-case ml-1">(Optional)</span>
                     </label>
 
                     <input

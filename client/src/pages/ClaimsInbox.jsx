@@ -1,19 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../api/client';
 import './ClaimsInbox.css';
-const initialClaims = [
-  { id: 'NHCX-260184', patient: 'Ananya Sharma', provider: 'Apollo Mumbai', amount: '₹42,800', risk: 'Green', riskLabel: '🟢 Green' },
-  { id: 'NHCX-260185', patient: 'Rahul Verma', provider: 'Fortis Delhi', amount: '₹1,18,000', risk: 'Yellow', riskLabel: '🟡 Yellow' },
-  { id: 'NHCX-260186', patient: 'Meera Iyer', provider: 'Care Hyderabad', amount: '₹2,76,500', risk: 'Red', riskLabel: '🔴 Red' }
-];
 
 const ClaimsInbox = () => {
+  const [claims, setClaims] = useState([]);
   const [search, setSearch] = useState('');
   const [riskFilter, setRiskFilter] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredClaims = initialClaims.filter(claim => {
+  useEffect(() => {
+    const fetchClaims = async () => {
+      try {
+        const data = await api.get('/claims');
+        // Map the backend format to the component's expected format
+        const mapped = data.claims.map(c => {
+          let riskLabel = '⚪ Unknown';
+          let risk = 'Unknown';
+          if (c.riskBand === 'GREEN' || c.riskBand === 'LOW') { risk = 'Green'; riskLabel = '🟢 Green'; }
+          else if (c.riskBand === 'YELLOW' || c.riskBand === 'MEDIUM') { risk = 'Yellow'; riskLabel = '🟡 Yellow'; }
+          else if (c.riskBand === 'RED' || c.riskBand === 'HIGH') { risk = 'Red'; riskLabel = '🔴 Red'; }
+
+          return {
+            id: c.claimId,
+            patient: c.patientName || c.patientId,
+            provider: c.providerId,
+            amount: `₹${c.billedAmount.toLocaleString()}`,
+            risk,
+            riskLabel,
+          };
+        });
+        setClaims(mapped);
+      } catch (err) {
+        console.error("Failed to fetch claims:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchClaims();
+  }, []);
+
+  const filteredClaims = claims.filter(claim => {
     const matchesSearch = Object.values(claim).some(val => 
-      val.toLowerCase().includes(search.toLowerCase())
+      String(val).toLowerCase().includes(search.toLowerCase())
     );
     const matchesRisk = !riskFilter || claim.risk === riskFilter;
     return matchesSearch && matchesRisk;

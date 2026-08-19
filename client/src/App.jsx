@@ -1,9 +1,8 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import About from './pages/About';
 import AdminOversight from './pages/AdminOversight';
-import ClaimEntry from './pages/ClaimEntry';
 import Claims from './pages/Claims';
 import ClaimsInbox from './pages/ClaimsInbox';
 import ClinicalDocument from './pages/ClinicalDocument';
@@ -14,7 +13,6 @@ import FhirInspector from './pages/FhirInspector';
 import FraudAnalytics from './pages/FraudAnalytics';
 import InsurerCommand from './pages/InsurerCommand';
 import Investigator from './pages/Investigator';
-import KanbanBoard from './pages/KanbanBoard';
 import LinkABHA from './pages/LinkABHA';
 import ModelFeedback from './pages/ModelFeedback';
 import ProviderIntelligence from './pages/ProviderIntelligence';
@@ -29,7 +27,7 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/about" element={<About />} />
           <Route path="/admin_oversight" element={<AdminOversight />} />
-          <Route path="/claim_entry" element={<ClaimEntry />} />
+          <Route path="/claim_entry" element={<Navigate to="/claims" replace />} />
           <Route path="/claims" element={<Claims />} />
           <Route path="/claims_inbox" element={<ClaimsInbox />} />
           <Route path="/clinical_document" element={<ClinicalDocument />} />
@@ -40,7 +38,7 @@ function App() {
           <Route path="/fraud_analytics" element={<FraudAnalytics />} />
           <Route path="/insurer_command" element={<InsurerCommand />} />
           <Route path="/investigator" element={<Investigator />} />
-          <Route path="/kanban_board" element={<KanbanBoard />} />
+          <Route path="/kanban_board" element={<Navigate to="/investigator" replace />} />
           <Route path="/link_ABHA" element={<LinkABHA />} />
           <Route path="/model_feedback" element={<ModelFeedback />} />
           <Route path="/provider_intelligence" element={<ProviderIntelligence />} />

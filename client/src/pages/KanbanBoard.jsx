@@ -2,14 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './KanbanBoard.css';
 
-const initialCards = [
-  { id: 1, col: 0, risk: 'green', code: '#CLM-991', name: 'Sofiya Gowda', clinic: 'Apollo Clinic Bengaluru', amount: '₹45,000' },
-  { id: 2, col: 0, risk: 'yellow', code: '#CLM-992', name: 'Adityapratap Singh', clinic: 'Fortis Healthcare Delhi', amount: '₹95,000' },
-  { id: 3, col: 1, risk: 'green', code: '#CLM-988', name: 'Rajdeep Yadav', clinic: 'AIIMS Hospital Bengaluru', extra: 'Rule #1 Checked: Clean', amount: '₹1,45,000' },
-  { id: 4, col: 2, risk: 'yellow', code: '#CLM-974', name: 'Ayush Chaudhary', clinic: 'City Care Clinic Mumbai', extra: 'Flag: IPD date collision with Claim #9102', amount: '₹2,10,000' },
-  { id: 5, col: 3, risk: 'red', code: '#CLM-842', name: 'Ahtesham Shaikh', clinic: 'Care Hospital Hyderabad', extra: 'Rule #4 Triggered: Unbundled Surgery', amount: '₹2,45,000' },
-  { id: 6, col: 4, risk: 'green', code: '#CLM-901', name: 'Urvi Dhakate', clinic: 'Max Hospital Kolkata', extra: 'Zero-shot LOINC Map Verified', amount: '₹95,000' },
-];
+// initialCards removed in favor of dynamic API fetch
 
 const columns = [
   { id: 0, title: 'Submitted', color: 'bg-blue-500' },
@@ -21,19 +14,73 @@ const columns = [
 
 const KanbanBoard = () => {
   const [riskFilter, setRiskFilter] = useState('all');
-  const [cards, setCards] = useState(initialCards);
+  const [cards, setCards] = useState([]);
+
+  React.useEffect(() => {
+    const fetchClaims = async () => {
+      try {
+        const { default: api } = await import('../api/client');
+        const data = await api.get('/claims');
+        const mapped = data.claims.map(c => {
+          let risk = 'green';
+          if (c.riskBand === 'MEDIUM') risk = 'yellow';
+          if (c.riskBand === 'HIGH' || c.riskBand === 'CRITICAL') risk = 'red';
+
+          let col = 0; // submitted
+          if (c.kanbanColumn === 'processing') col = 1;
+          if (c.kanbanColumn === 'flagged') col = 2;
+          if (c.kanbanColumn === 'investigation') col = 3;
+          if (c.kanbanColumn === 'approved') col = 4;
+
+          return {
+            id: c.claimId,
+            col,
+            risk,
+            code: `#${c.claimId.split('-')[0].substring(0, 6)}`,
+            name: c.patientName || c.patientId,
+            clinic: c.providerName || c.providerId,
+            amount: `₹${Number(c.billedAmount).toLocaleString()}`,
+            extra: c.anomalyDescription || c.aiRecommendation?.replace(/_/g, ' ') || null
+          };
+        });
+        setCards(mapped);
+      } catch (err) {
+        console.error("Failed to fetch claims:", err);
+      }
+    };
+    fetchClaims();
+  }, []);
+
+  const updateCardColumn = async (cardId, newColId) => {
+    try {
+      const colToKanban = {
+        0: 'submitted',
+        1: 'processing',
+        2: 'flagged',
+        3: 'investigation',
+        4: 'approved'
+      };
+      const kanbanColumn = colToKanban[newColId];
+      
+      const { default: api } = await import('../api/client');
+      await api.patch(`/claims/${cardId}/status`, { kanbanColumn });
+      
+      setCards(cards.map(card => card.id === cardId ? { ...card, col: newColId } : card));
+    } catch (err) {
+      console.error("Failed to update claim column:", err);
+      alert("Failed to update claim status in backend.");
+    }
+  };
 
   const handleMoveCard = (id) => {
-    setCards(cards.map(card => {
-      if (card.id === id) {
-        if (card.col < columns.length - 1) {
-          return { ...card, col: card.col + 1 };
-        } else {
-          alert("Claim reached final stage!");
-        }
+    const card = cards.find(c => c.id === id);
+    if (card) {
+      if (card.col < columns.length - 1) {
+        updateCardColumn(id, card.col + 1);
+      } else {
+        alert("Claim reached final stage!");
       }
-      return card;
-    }));
+    }
   };
 
   const handleDragStart = (e, cardId) => {
@@ -46,9 +93,9 @@ const KanbanBoard = () => {
 
   const handleDrop = (e, colId) => {
     e.preventDefault();
-    const cardId = parseInt(e.dataTransfer.getData('cardId'), 10);
-    if (!isNaN(cardId)) {
-      setCards(cards.map(card => card.id === cardId ? { ...card, col: colId } : card));
+    const cardId = e.dataTransfer.getData('cardId');
+    if (cardId) {
+      updateCardColumn(cardId, colId);
     }
   };
 
