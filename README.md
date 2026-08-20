@@ -1,4 +1,3 @@
-````markdown
 # 🛡️ Argus
 
 > AI-powered health insurance claim verification and risk assessment platform.
@@ -44,7 +43,7 @@ Argus/
 ├── frontend/
 ├── server/
 └── README.md
-````
+```
 
 ---
 
@@ -59,4 +58,3 @@ Argus/
 <p align="center">
   🛡️ Argus - Smarter Healthcare Claim Verification
 </p>
-```
